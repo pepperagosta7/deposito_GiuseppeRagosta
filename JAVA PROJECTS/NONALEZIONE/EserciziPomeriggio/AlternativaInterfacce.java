@@ -1,7 +1,9 @@
 package NONALEZIONE.EserciziPomeriggio;
 
 import java.util.Date;
+import java.util.List;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Scanner;
 import java.text.ParseException;
@@ -26,6 +28,10 @@ interface IRestituibile {
     boolean puoEssereRestituito();
 }
 
+interface IFidelizzabile {
+    int calcolaPuntiFedelta();
+}
+
 // Classe base Prodotto
 abstract class Prodotto implements IProdotto {
     protected String codice;
@@ -46,7 +52,7 @@ abstract class Prodotto implements IProdotto {
 }
 
 // Classe derivata per prodotti alimentari
-class ProdottoAlimentare extends Prodotto implements IScontabile {
+class ProdottoAlimentare extends Prodotto implements IScontabile, IFidelizzabile {
     private Date dataScadenza;
 
     public ProdottoAlimentare(String codice, String nome, double prezzo, String dataScadenza) throws ParseException {
@@ -70,10 +76,15 @@ class ProdottoAlimentare extends Prodotto implements IScontabile {
     public String getDettagli() {
         return "Prodotto Alimentare: " + nome + ", Scadenza: " + new SimpleDateFormat("yyyy-MM-dd").format(dataScadenza);
     }
+
+    @Override
+    public int calcolaPuntiFedelta() {
+        return (int) (prezzo / 10);
+    }
 }
 
 // Classe derivata per prodotti elettronici
-class ProdottoElettronico extends Prodotto implements IGarantibile {
+class ProdottoElettronico extends Prodotto implements IGarantibile, IFidelizzabile {
     private int garanziaMesi;
     private Date dataAcquisto;
 
@@ -94,10 +105,15 @@ class ProdottoElettronico extends Prodotto implements IGarantibile {
     public String getDettagli() {
         return "Prodotto Elettronico: " + nome + ", Garanzia: " + garanziaMesi + " mesi";
     }
+
+    @Override
+    public int calcolaPuntiFedelta() {
+        return (int) (prezzo / 20);
+    }
 }
 
 // Classe derivata per prodotti di abbigliamento
-class ProdottoAbbigliamento extends Prodotto implements IRestituibile {
+class ProdottoAbbigliamento extends Prodotto implements IRestituibile, IFidelizzabile {
     private String taglia;
     private String materiale;
     private Date dataAcquisto;
@@ -120,12 +136,128 @@ class ProdottoAbbigliamento extends Prodotto implements IRestituibile {
     public String getDettagli() {
         return "Prodotto Abbigliamento: " + nome + ", Taglia: " + taglia + ", Materiale: " + materiale;
     }
+
+    @Override
+    public int calcolaPuntiFedelta() {
+        return (int) (prezzo / 15);
+    }
 }
 
-// Classe principale con menu
-public class AlternativaInterfacce {
-    public static void main(String[] args) {
+class GestoreProdotti {
+    private List<Prodotto> prodotti;
+
+    public GestoreProdotti() {
+        this.prodotti = new ArrayList<>();
+    }
+
+    public void aggiungiProdotto(Prodotto prodotto) {
+        prodotti.add(prodotto);
+    }
+
+    public void rimuoviProdotto(Prodotto prodotto) {
+        prodotti.remove(prodotto);
+    }
+
+    public void stampaResoconto() {
+        for (Prodotto prodotto : prodotti) {
+            System.out.println(prodotto.getDettagli());
+        }
+    }
+
+    public void applicaSconti() {
+        for (Prodotto prodotto : prodotti) {
+            if (prodotto instanceof IScontabile) {
+                IScontabile scontabile = (IScontabile) prodotto;
+                if (scontabile.isInScadenza()) {
+                    double sconto = scontabile.calcolaSconto();
+                    System.out.println("Sconto applicato a " + prodotto.getDettagli() + ": " + sconto);
+                }
+            }
+        }
+    }
+}
+
+class Operazioni {
+
+    Scanner scanner = new Scanner(System.in);
+    GestoreProdotti gestore = new GestoreProdotti();
+
+    public Operazioni(Scanner scanner, GestoreProdotti gestore) {
+        this.scanner = scanner;
+        this.gestore = gestore;
+    }
+
+    public void aggiungiProdottoAlimentare() throws ParseException {
+        System.out.print("Inserisci codice: ");
+        String codiceA = scanner.nextLine();
+        System.out.print("Inserisci nome: ");
+        String nomeA = scanner.nextLine();
+        System.out.print("Inserisci prezzo: ");
+        double prezzoA = scanner.nextDouble();
+        scanner.nextLine(); // Consuma il newline rimasto nel buffer
+        System.out.print("Inserisci data di scadenza (yyyy-MM-dd): ");
+        String scadenzaA = scanner.nextLine();
+        ProdottoAlimentare pa = new ProdottoAlimentare(codiceA, nomeA, prezzoA, scadenzaA);
+        gestore.aggiungiProdotto(pa);
+        System.out.println(pa.getDettagli());
+        if (pa.isInScadenza()) {
+            System.out.println("Il prodotto è in scadenza. Sconto applicabile: " + pa.calcolaSconto());
+        }
+    }
+
+    public void aggiungiProdottoElettronico() throws ParseException {
+        System.out.print("Inserisci codice: ");
+        String codiceE = scanner.nextLine();
+        System.out.print("Inserisci nome: ");
+        String nomeE = scanner.nextLine();
+        System.out.print("Inserisci prezzo: ");
+        double prezzoE = scanner.nextDouble();
+        System.out.print("Inserisci garanzia in mesi: ");
+        int garanziaE = scanner.nextInt();
+        scanner.nextLine(); // Consuma il newline rimasto nel buffer
+        System.out.print("Inserisci data di acquisto (yyyy-MM-dd): ");
+        String dataAcquistoE = scanner.nextLine();
+        ProdottoElettronico pe = new ProdottoElettronico(codiceE, nomeE, prezzoE, garanziaE, dataAcquistoE);
+        gestore.aggiungiProdotto(pe);
+        System.out.println(pe.getDettagli());
+        if (pe.isInGaranzia()) {
+            System.out.println("Il prodotto è ancora in garanzia.");
+        } else {
+            System.out.println("Il prodotto non è più in garanzia.");
+        }
+    }
+
+    public void aggiungiProdottoAbbigliamento() throws ParseException {
+        System.out.print("Inserisci codice: ");
+        String codiceAb = scanner.nextLine();
+        System.out.print("Inserisci nome: ");
+        String nomeAb = scanner.nextLine();
+        System.out.print("Inserisci prezzo: ");
+        double prezzoAb = scanner.nextDouble();
+        scanner.nextLine(); // Consuma il newline rimasto nel buffer
+        System.out.print("Inserisci taglia: ");
+        String taglia = scanner.nextLine();
+        System.out.print("Inserisci materiale: ");
+        String materiale = scanner.nextLine();
+        System.out.print("Inserisci data di acquisto (yyyy-MM-dd): ");
+        String dataAcquistoAb = scanner.nextLine();
+        ProdottoAbbigliamento pab = new ProdottoAbbigliamento(codiceAb, nomeAb, prezzoAb, taglia, materiale, dataAcquistoAb);
+        gestore.aggiungiProdotto(pab);
+        System.out.println(pab.getDettagli());
+        if (pab.puoEssereRestituito()) {
+            System.out.println("Il prodotto può essere restituito.");
+        } else {
+            System.out.println("Il periodo di restituzione è scaduto.");
+        }
+    }
+}
+
+class Menu {
+    
+    public void stampaMenu() {
         Scanner scanner = new Scanner(System.in);
+        GestoreProdotti gestore = new GestoreProdotti();
+        Operazioni operazione = new Operazioni(scanner, gestore);
         boolean exit = false;
 
         while (!exit) {
@@ -133,7 +265,9 @@ public class AlternativaInterfacce {
             System.out.println("1. Aggiungi un prodotto alimentare");
             System.out.println("2. Aggiungi un prodotto elettronico");
             System.out.println("3. Aggiungi un prodotto di abbigliamento");
-            System.out.println("4. Esci");
+            System.out.println("4. Stampa resoconto prodotti");
+            System.out.println("5. Applica sconti");
+            System.out.println("6. Esci");
 
             int scelta = scanner.nextInt();
             scanner.nextLine();
@@ -141,67 +275,26 @@ public class AlternativaInterfacce {
             try {
                 switch (scelta) {
                     case 1:
-                        System.out.print("Inserisci codice: ");
-                        String codiceA = scanner.nextLine();
-                        System.out.print("Inserisci nome: ");
-                        String nomeA = scanner.nextLine();
-                        System.out.print("Inserisci prezzo: ");
-                        double prezzoA = scanner.nextDouble();
-                        scanner.nextLine(); // Consuma il newline rimasto nel buffer
-                        System.out.print("Inserisci data di scadenza (yyyy-MM-dd): ");
-                        String scadenzaA = scanner.nextLine();
-                        ProdottoAlimentare pa = new ProdottoAlimentare(codiceA, nomeA, prezzoA, scadenzaA);
-                        System.out.println(pa.getDettagli());
-                        if (pa.isInScadenza()) {
-                            System.out.println("Il prodotto è in scadenza. Sconto applicabile: " + pa.calcolaSconto());
-                        }
+                        operazione.aggiungiProdottoAlimentare();
                         break;
 
                     case 2:
-                        System.out.print("Inserisci codice: ");
-                        String codiceE = scanner.nextLine();
-                        System.out.print("Inserisci nome: ");
-                        String nomeE = scanner.nextLine();
-                        System.out.print("Inserisci prezzo: ");
-                        double prezzoE = scanner.nextDouble();
-                        System.out.print("Inserisci garanzia in mesi: ");
-                        int garanziaE = scanner.nextInt();
-                        scanner.nextLine(); // Consuma il newline rimasto nel buffer
-                        System.out.print("Inserisci data di acquisto (yyyy-MM-dd): ");
-                        String dataAcquistoE = scanner.nextLine();
-                        ProdottoElettronico pe = new ProdottoElettronico(codiceE, nomeE, prezzoE, garanziaE, dataAcquistoE);
-                        System.out.println(pe.getDettagli());
-                        if (pe.isInGaranzia()) {
-                            System.out.println("Il prodotto è ancora in garanzia.");
-                        } else {
-                            System.out.println("Il prodotto non è più in garanzia.");
-                        }
+                        operazione.aggiungiProdottoElettronico();
                         break;
 
                     case 3:
-                        System.out.print("Inserisci codice: ");
-                        String codiceAb = scanner.nextLine();
-                        System.out.print("Inserisci nome: ");
-                        String nomeAb = scanner.nextLine();
-                        System.out.print("Inserisci prezzo: ");
-                        double prezzoAb = scanner.nextDouble();
-                        scanner.nextLine(); // Consuma il newline rimasto nel buffer
-                        System.out.print("Inserisci taglia: ");
-                        String taglia = scanner.nextLine();
-                        System.out.print("Inserisci materiale: ");
-                        String materiale = scanner.nextLine();
-                        System.out.print("Inserisci data di acquisto (yyyy-MM-dd): ");
-                        String dataAcquistoAb = scanner.nextLine();
-                        ProdottoAbbigliamento pab = new ProdottoAbbigliamento(codiceAb, nomeAb, prezzoAb, taglia, materiale, dataAcquistoAb);
-                        System.out.println(pab.getDettagli());
-                        if (pab.puoEssereRestituito()) {
-                            System.out.println("Il prodotto può essere restituito.");
-                        } else {
-                            System.out.println("Il periodo di restituzione è scaduto.");
-                        }
+                        operazione.aggiungiProdottoAbbigliamento();
                         break;
 
                     case 4:
+                        gestore.stampaResoconto();
+                        break;
+
+                    case 5:
+                        gestore.applicaSconti();
+                        break;
+
+                    case 6:
                         exit = true;
                         break;
 
@@ -215,5 +308,15 @@ public class AlternativaInterfacce {
             }
         }
         scanner.close();
+    }
+}
+
+
+
+// Classe principale con menu
+public class AlternativaInterfacce {
+    public static void main(String[] args) {
+        Menu menu = new Menu();
+        menu.stampaMenu();
     }
 }
