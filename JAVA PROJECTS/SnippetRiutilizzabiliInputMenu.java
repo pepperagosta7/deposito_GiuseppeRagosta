@@ -233,5 +233,14 @@ public class SnippetRiutilizzabiliInputMenu {
         System.out.print("Scegli un'opzione (0-9): ");
     }
 
+    
+    @SuppressWarnings("unused")
+    private static void clear() throws InterruptedException {
+        Thread.sleep(3000);
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
+    }
+
+
     // #endregion
 }
